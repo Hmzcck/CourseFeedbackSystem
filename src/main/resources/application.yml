@@ -15,3 +15,8 @@ spring:
           auth: true
           starttls:
             enable: true
+  openai:
+    model: model
+    api:
+      url: https://api.openai.com/v1/chat/completions
+      key: your_openai_key
