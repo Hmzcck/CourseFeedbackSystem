@@ -2,6 +2,7 @@ package com.webapp.coursefeedbacksystem.service;
 
 import com.webapp.coursefeedbacksystem.dto.Email;
 import com.webapp.coursefeedbacksystem.dto.FeedbackRequest;
+import com.webapp.coursefeedbacksystem.dto.FeedbackSummary;
 import com.webapp.coursefeedbacksystem.model.CourseModel;
 import com.webapp.coursefeedbacksystem.model.FeedbackModel;
 import com.webapp.coursefeedbacksystem.model.StudentFeedbackModel;
@@ -13,6 +14,7 @@ import com.webapp.coursefeedbacksystem.repository.FeedbackRepository;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class FeedbackService {
@@ -86,12 +88,12 @@ public class FeedbackService {
         if (feedback != null) {
             List<StudentFeedbackModel> studentFeedbacks = feedback.getStudentFeedbacks();
             if (studentFeedbacks != null) {
-                studentFeedbacks.add(new StudentFeedbackModel(user, feedback, course, comment));
+                studentFeedbacks.add(new StudentFeedbackModel(user, comment));
                 feedback.setStudentFeedbacks(studentFeedbacks);
                 createFeedback(feedback);
             } else {
                 studentFeedbacks = new ArrayList<StudentFeedbackModel>();
-                studentFeedbacks.add(new StudentFeedbackModel(user, feedback, course, comment));
+                studentFeedbacks.add(new StudentFeedbackModel(user, comment));
                 feedback.setStudentFeedbacks(studentFeedbacks);
                 createFeedback(feedback);
             }
@@ -100,5 +102,22 @@ public class FeedbackService {
             throw new RuntimeException("Feedback not found");
         }
 
+    }
+
+       public List<FeedbackSummary> getFeedbackSummariesForUser(UserModel user) {
+        List<CourseModel> courses = user.getCourses();
+        List<FeedbackSummary> feedbackDtos = new ArrayList<>();
+
+        for (CourseModel course : courses) {
+            for (FeedbackModel feedback : course.getFeedbacks()) {
+                feedbackDtos.add(new FeedbackSummary(
+                    course.getName(),
+                    feedback.getDate(),
+                    feedback.getTopic(),
+                    feedback.getSummary()
+                ));
+            }
+        }
+        return feedbackDtos;
     }
 }

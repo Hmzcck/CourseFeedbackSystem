@@ -18,17 +18,11 @@ public class StudentFeedbackModel {
 
     @DBRef
     private UserModel studentId; // student id
-    @DBRef
-    private FeedbackModel feedbackId; // feedback id
-    @DBRef
-    private CourseModel courseId;
 
     private String comment;
 
-    public StudentFeedbackModel(UserModel studentId, FeedbackModel feedbackId, CourseModel courseId, String comment) {
+    public StudentFeedbackModel(UserModel studentId, String comment) {
         this.studentId = studentId;
-        this.feedbackId = feedbackId;
-        this.courseId = courseId;
         this.comment = comment;
     }
 }
