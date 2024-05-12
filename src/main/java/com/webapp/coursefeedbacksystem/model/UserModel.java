@@ -30,6 +30,7 @@ public class UserModel implements UserDetails {
     private String password;
 
     private List<CourseModel> courses; // Storing the course IDs as references for student
+    private List<String> feedbacks; // Storing the feedback IDs as references for student
     private List<CourseModel> teachingCourses; // Only for teachers
     // private List<String> managedCourses; // Only for admins
 

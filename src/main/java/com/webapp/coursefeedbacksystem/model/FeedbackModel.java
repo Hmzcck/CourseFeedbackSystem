@@ -22,12 +22,10 @@ public class FeedbackModel {
     private String topic;
     private String summary;
     private List<StudentFeedbackModel> studentFeedbacks;
-    private List<String> url;
 
-    public FeedbackModel(Date date, String s, String topic, List<String> urls) {
+    public FeedbackModel(Date date, String s, String topic) {
         this.date = date;
         this.topic = topic;
         this.summary = s;
-        this.url = urls;
     }
 }

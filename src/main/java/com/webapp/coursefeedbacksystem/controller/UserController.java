@@ -3,17 +3,22 @@ package com.webapp.coursefeedbacksystem.controller;
 import com.webapp.coursefeedbacksystem.dto.*;
 import com.webapp.coursefeedbacksystem.model.CourseModel;
 import com.webapp.coursefeedbacksystem.model.FeedbackModel;
+import com.webapp.coursefeedbacksystem.model.URLModel;
 import com.webapp.coursefeedbacksystem.model.UserModel;
 import com.webapp.coursefeedbacksystem.service.*;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.service.invoker.UrlArgumentResolver;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 public class UserController {
@@ -24,15 +29,17 @@ public class UserController {
     private final FeedbackService feedbackService;
     private final CourseService courseService;
     private final JwtService jwtService;
+    private final URLService URLService;
 
-    @Value("${openai.api.model}")
+    @Value("gpt-3.5-turbo")
     private String model;
 
-    @Value(("${openai.api.url}"))
+    @Value(("https://api.openai.com/v1/chat/completions"))
     private String apiURL;
 
     public UserController(AuthenticationService authService, UserService userService, EmailService emailService,
-            RestTemplate template, FeedbackService feedbackService, CourseService courseService, JwtService jwtService) {
+            RestTemplate template, FeedbackService feedbackService, CourseService courseService,
+            JwtService jwtService, URLService URLService) {
         this.authService = authService;
         this.userService = userService;
         this.emailService = emailService;
@@ -40,6 +47,7 @@ public class UserController {
         this.feedbackService = feedbackService;
         this.courseService = courseService;
         this.jwtService = jwtService;
+        this.URLService = URLService;
     }
 
     @GetMapping("/roleget") // Changed to a GET request
@@ -84,20 +92,83 @@ public class UserController {
         courseService.createCourse(courseModel);
     }
 
-    @PostMapping("/submit-form")
-    public void submitForm(@RequestHeader String referer, @RequestBody String comment) {
-        System.out.println(referer);
-        System.out.println(comment);
-        String[] idArr = referer.split("-");
-        UserModel user = userService.findUserById(idArr[0]);
-        System.out.println(user.getEmail());
-        CourseModel course = courseService.getCourseById(idArr[1]).get();
-        System.out.println(course.getName());
-        FeedbackModel feedback = feedbackService.getFeedbackById(idArr[2]);
-        System.out.println("feedback");
-        System.out.println(feedback.getTopic());
-        feedbackService.submitForm(comment, user, course, feedback);
+    @GetMapping("/check-link")
+    public ResponseEntity<Void> handleLink(@RequestParam String param1,
+            @RequestParam String param2,
+            @RequestParam String param3) {
+        System.out.println(param1 + "/" + param2 + "/" + param3);
+        String uid = param1 + "/" + param2 + "/" + param3;
+        URLModel link = URLService.findByUrl("http://localhost:8080/submitform/" + uid);
+        if (link != null) {
+            CourseModel course = courseService.getCourseById(param2).orElse(null);
+            FeedbackModel feedback = feedbackService.getFeedbackById(param3);
+
+            if (course != null && feedback != null) {
+                String cName = course.getName();
+                String fTopic = feedback.getTopic();
+                String date = feedback.getDate().toString();
+
+                // Using UriComponentsBuilder to construct the URL safely
+                String reactUrl = UriComponentsBuilder
+                        .fromHttpUrl("http://localhost:3000/submitform")
+                        .queryParam("uid", uid)
+                        .queryParam("courseName", cName)
+                        .queryParam("feedbackTopic", fTopic)
+                        .queryParam("date", date)
+                        .toUriString();
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.setLocation(URI.create(reactUrl));
+                return new ResponseEntity<>(headers, HttpStatus.FOUND);
+            }
+        }
+        System.out.println("Link not found");
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
+
+    @PostMapping("/submit-form")
+    public ResponseEntity<Object> submitForm(@RequestHeader("url") String url,
+            @RequestBody String comment) {
+        if (url != null) {
+            try {
+                String[] urlArr = url.split("/");
+                String userId = urlArr[0];
+                String courseId = urlArr[1];
+                String feedbackId = urlArr[2];
+                UserModel user = userService.findUserById(userId);
+                System.out.println(user.getEmail());
+                // Proceed with your logic
+                System.out.println(user.getEmail());
+                System.out.println(comment);
+                System.out.println(user.getEmail());
+                CourseModel course = courseService.getCourseById(courseId).get();
+                System.out.println(course.getName());
+                FeedbackModel feedback = feedbackService.getFeedbackById(feedbackId);
+                System.out.println("feedback");
+                System.out.println(feedback.getTopic());
+                feedbackService.submitForm(comment, user, course, feedback);
+                return ResponseEntity.ok().build();
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Missing or invalid Authorization header");
+        }
+    }
+
+    @GetMapping("/get-courses")
+    public List<String> getCourses(@RequestHeader String Authorization) {
+        UserModel user = jwtService.findByToken(Authorization.split(" ")[1]).getUser();
+        if(user.getRole().equals("teacher")) {
+            List<CourseModel> courses = userService.getTeachingCourses(user);
+            List<String> courseNames = new ArrayList<>();
+            for (CourseModel course : courses) {
+                courseNames.add(course.getName());
+            }
+            return courseNames;
+        }
+        return null; 
+    };
 
     @PostMapping("/test")
     public void testEndpoint(@RequestHeader String Authorization, @RequestBody String body) {
@@ -111,14 +182,10 @@ public class UserController {
     }
 
     @GetMapping("/get-feedbacks")
-    public List<FeedbackModel> getMethodName(@RequestHeader String Authorization) {
+    public ResponseEntity<List<FeedbackSummary>> getMethodName(@RequestHeader String Authorization) {
         UserModel user = jwtService.findByToken(Authorization.split(" ")[1]).getUser();
-        List<CourseModel> courses = user.getCourses();
-        List<FeedbackModel> feedbacks = new ArrayList<>();
-        courses.forEach(course -> {
-            feedbacks.addAll(course.getFeedbacks());
-        });
-        return feedbacks;
+        List<FeedbackSummary> feedbackDtos = feedbackService.getFeedbackSummariesForUser(user);
+        return ResponseEntity.ok(feedbackDtos);
     }
 
     @PostMapping("/update-chatgpt-api")

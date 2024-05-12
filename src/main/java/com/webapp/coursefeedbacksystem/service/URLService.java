@@ -3,6 +3,7 @@ package com.webapp.coursefeedbacksystem.service;
 import com.webapp.coursefeedbacksystem.model.CourseModel;
 import com.webapp.coursefeedbacksystem.model.URLModel;
 import com.webapp.coursefeedbacksystem.model.UserModel;
+import com.webapp.coursefeedbacksystem.model.FeedbackModel;
 import com.webapp.coursefeedbacksystem.repository.URLRepository;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +16,12 @@ public class URLService {
         this.repository = repository;
     }
 
-    public URLModel createURL(String url, CourseModel courseModel, UserModel userModel) {
-        return repository.save(new URLModel(url, courseModel, userModel));
+    public URLModel findByUrl(String url) {
+        return repository.findByUrl(url);
+    }
+
+    public URLModel createURL(String url, CourseModel courseModel, UserModel userModel, FeedbackModel feedbackModel) {
+        return repository.save(new URLModel(url, courseModel, userModel, feedbackModel));
     }
 
     public void deleteURL(URLModel url) {

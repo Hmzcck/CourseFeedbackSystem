@@ -24,14 +24,18 @@ public class URLModel {
     @DBRef
     private CourseModel course;
 
-    @Indexed(name = "ttl_index", expireAfterSeconds = 200)
+    @DBRef
+    private FeedbackModel feedback;
+
+    //@Indexed(name = "ttl_index", expireAfterSeconds = 22022)
     private Date createdAt;
 
-    public URLModel(String url, CourseModel course, UserModel user) {
+    public URLModel(String url, CourseModel course, UserModel user, FeedbackModel feedback) {
         this.url = url;
         this.createdAt = new Date();
         this.course = course;
         this.user = user;
+        this.feedback = feedback;
 
     }
 }

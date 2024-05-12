@@ -53,11 +53,9 @@ public class FeedbackService {
         return feedbackModel;
     }
 
-    public String generateUrl(UserModel student) {
-        // URL olustur
-        String url = "test";
+    public String generateUrl(String userId, String courseId, String feedbackId) {        // URL olustur
+        String url = "http://localhost:8080/submitform/" + userId + "/" + courseId + "/" + feedbackId;
         return url;
-
     }
 
     public List<String> requestFeedbackFromStudents(FeedbackRequest feedbackRequest) {
@@ -66,8 +64,10 @@ public class FeedbackService {
         String topic = feedbackRequest.getCourseTopic();
         List<UserModel> students = course.getStudents();
         List<String> urls = new ArrayList<>();
+       
+        FeedbackModel feedbackModel = createFeedback(new FeedbackModel(date, null, topic));
         students.forEach(student -> {
-            String url = generateUrl(student);
+            String url = generateUrl(student.getId(), course.getId(), feedbackModel.getId());
             // sendMailToStudent
             urls.add(url);
             emailService.sendEmail(new Email(
@@ -75,10 +75,9 @@ public class FeedbackService {
                     course.getName(),
                     url));
         });
-        FeedbackModel feedbackModel = createFeedback(new FeedbackModel(date, null, topic, urls));
         addFeedbackToCourse(feedbackModel, course);
         for (int i = 0; i < urls.size(); i++) {
-            urlService.createURL(urls.get(i), course, students.get(i));
+            urlService.createURL(urls.get(i), course, students.get(i), feedbackModel);
         }
         return urls;
     }
