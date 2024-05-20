@@ -1,6 +1,7 @@
 package com.webapp.coursefeedbacksystem.service;
 
 import com.webapp.coursefeedbacksystem.model.UserModel;
+import com.webapp.coursefeedbacksystem.model.CourseModel;
 import com.webapp.coursefeedbacksystem.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -8,7 +9,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
+import java.util.List;
 @Service
 public class UserService implements UserDetailsService {
 
@@ -43,6 +44,10 @@ public class UserService implements UserDetailsService {
                     System.out.println("Failed to find user with ID: " + id);
                     return new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
                 });
+    }
+
+    public List<CourseModel> getTeachingCourses(UserModel user) {
+        return user.getTeachingCourses();
     }
 
 }

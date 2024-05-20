@@ -27,7 +27,7 @@ public class URLModel {
     @DBRef
     private FeedbackModel feedback;
 
-    //@Indexed(name = "ttl_index", expireAfterSeconds = 22022)
+    @Indexed(name = "ttl_index", expireAfterSeconds = 48*60*60) // 48 hours
     private Date createdAt;
 
     public URLModel(String url, CourseModel course, UserModel user, FeedbackModel feedback) {

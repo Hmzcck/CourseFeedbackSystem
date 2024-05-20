@@ -69,9 +69,9 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthenticationResponse> login(
-            @RequestBody UserModel request) {
-        return ResponseEntity.ok(authService.authenticate(request));
+    public ResponseEntity<AuthenticationResponse> login(@RequestBody UserModel request) {
+        AuthenticationResponse response = authService.authenticate(request);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/chat")
@@ -96,9 +96,8 @@ public class UserController {
     public ResponseEntity<Void> handleLink(@RequestParam String param1,
             @RequestParam String param2,
             @RequestParam String param3) {
-        System.out.println(param1 + "/" + param2 + "/" + param3);
-        String uid = param1 + "/" + param2 + "/" + param3;
-        URLModel link = URLService.findByUrl("http://localhost:8080/submitform/" + uid);
+        String uid = param1 + "&param2=" + param2 + "&param3=" + param3;
+        URLModel link = URLService.findByUrl("http://localhost:8080/check-link?param1=" + uid);
         if (link != null) {
             CourseModel course = courseService.getCourseById(param2).orElse(null);
             FeedbackModel feedback = feedbackService.getFeedbackById(param3);
@@ -131,10 +130,16 @@ public class UserController {
             @RequestBody String comment) {
         if (url != null) {
             try {
-                String[] urlArr = url.split("/");
+                String[] urlArr = url.split("&");
+                System.out.println(urlArr[0]);
+                System.out.println(urlArr[1]);
+                System.out.println(urlArr[2]);
                 String userId = urlArr[0];
-                String courseId = urlArr[1];
-                String feedbackId = urlArr[2];
+                String courseId = urlArr[1].split("=")[1];
+                String feedbackId = urlArr[2].split("=")[1];
+                System.out.println(userId);
+                System.out.println(courseId);
+                System.out.println(feedbackId);
                 UserModel user = userService.findUserById(userId);
                 System.out.println(user.getEmail());
                 // Proceed with your logic
@@ -147,6 +152,11 @@ public class UserController {
                 System.out.println("feedback");
                 System.out.println(feedback.getTopic());
                 feedbackService.submitForm(comment, user, course, feedback);
+                System.out.println("feedback submitted");
+                String fullURL = "http://localhost:8080/check-link?param1=" + userId + "&param2=" + courseId + "&param3="
+                        + feedbackId;
+                URLModel urlModel = URLService.findByUrl(fullURL);
+                URLService.deleteURL(urlModel);
                 return ResponseEntity.ok().build();
             } catch (Exception e) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

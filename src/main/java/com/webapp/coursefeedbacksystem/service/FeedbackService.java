@@ -9,8 +9,11 @@ import com.webapp.coursefeedbacksystem.model.StudentFeedbackModel;
 import com.webapp.coursefeedbacksystem.model.UserModel;
 import com.webapp.coursefeedbacksystem.repository.CourseRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import com.webapp.coursefeedbacksystem.repository.FeedbackRepository;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -53,9 +56,20 @@ public class FeedbackService {
         return feedbackModel;
     }
 
+    @SuppressWarnings("deprecation")
+    public String buildUrl(String baseUrl, String param1, String param2, String param3) {
+        return String.format("%s?param1=%s&param2=%s&param3=%s",
+                baseUrl,
+                URLEncoder.encode(param1),
+                URLEncoder.encode(param2),
+                URLEncoder.encode(param3)
+        );
+    }
+
     public String generateUrl(String userId, String courseId, String feedbackId) {        // URL olustur
-        String url = "http://localhost:8080/submitform/" + userId + "/" + courseId + "/" + feedbackId;
-        return url;
+        //String url = "http://localhost:8080/check-link?param1=" + userId + "&param2=" + courseId + "&param3=" + feedbackId;
+        String urlBuilt =   buildUrl("http://localhost:8080/check-link", userId, courseId, feedbackId);
+        return urlBuilt;
     }
 
     public List<String> requestFeedbackFromStudents(FeedbackRequest feedbackRequest) {
